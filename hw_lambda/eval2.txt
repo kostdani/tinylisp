@@ -1,0 +1,7 @@
+(λ x y s z . x s ( y s z )) (λ s z . s z) (λ s z . s ( s z ))
+(λ y s z . (λ s z . s z) s ( y s z )) (λ s z . s ( s z ))
+(λ s z . (λ s z . s z) s ( (λ s z . s ( s z )) s z ))
+(λ s z . (λ z . s z) ( (λ s z . s ( s z )) s z ))
+(λ s z . s ( (λ s z . s ( s z )) s z ) )	
+(λ s z . s ( (λ z . s ( s z )) z ) )
+(λ s z . s ( s ( s z ) ) )
