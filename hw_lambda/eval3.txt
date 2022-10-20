@@ -1,0 +1,7 @@
+(λ a b . g a a b) ( (λ k l . k k l) (λ i . i) o ) d
+(λ a b . g a a b) ( (λ l . (λ i . i) (λ i . i) l) o ) d
+(λ a b . g a a b) ( (λ i . i) (λ i . i) o ) d
+(λ a b . g a a b) ( (λ i . i) o ) d
+(λ a b . g a a b) ( o ) d
+(λ b . g ( o ) ( o ) b)  d
+g ( o ) ( o ) d
