@@ -1,0 +1,1 @@
+(λ x y . x y (λ b c . c) (λ d e . d) (λ a b . b) (λ a b . a) x (λ x y . x) y (λ b c . c) (λ d e . d))
