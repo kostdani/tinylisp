@@ -1,3 +1,4 @@
 (λ x y y . x ( x y y ) x) ( y x ) ( x x )
-(λ y y . y x ( y x y y ) ( y x )) ( x x )
-(λ y . x x x ( x x x ( x x ) ( x x ) ) ( x x x )) 
+(λ x k k . x ( x l l ) x) ( y x ) ( x x )
+(λ k l . y x ( y x k k ) ( y x )) ( x x )
+(λ l . y x ( y x l l ) ( y x ))
