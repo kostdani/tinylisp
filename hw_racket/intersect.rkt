@@ -4,8 +4,9 @@
 (if (or (not m) (> (car l) m)) (findmax (cdr l) (car l)) (findmax (cdr l) m))))
 
 (define (remelem l e)
-(if (= (car l) e) (cdr l) (cons (car l) (remelem (cdr l) e)))
-)
+(if (null? l) l
+(if (= (car l) e) (remelem (cdr l) e) (cons (car l) (remelem (cdr l) e)))
+))
 
 (define (contains? l e)
 (if (null? l) #f
