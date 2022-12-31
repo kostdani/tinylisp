@@ -14,14 +14,14 @@
 
     void Pair::print(std::ostream &os) const {
         os << "(" << *car;
-        Value *p = cdr;
+        SEXP p = cdr;
         while (true) {
             if (p->pair()) {
                 if (p->null()) {
                     os << ")";
                     break;
                 }
-                Pair *pair = (Pair *) p;
+                Pair *pair = (Pair *) p.get();
                 os << " " << *pair->car;
                 p = pair->cdr;
             } else {
@@ -58,16 +58,16 @@
 
     void Pair::toRPN(std::queue<Code *> &code) {
 
-        std::vector<Value *> list;
-        Value *p=this;
+        std::vector<SEXP> list;
+        SEXP p=std::make_shared<Pair>(*this);
         while(p->pair()&&!p->null()){
-            list.push_back(((Pair*)p)->car);
-            p=((Pair*)p)->cdr;
+            list.push_back(((Pair*)p.get())->car);
+            p=((Pair*)p.get())->cdr;
         }
         list.push_back(p);
         if(list.back()->null()){
             if(list[0]->symbol()) {
-                if (((Symbol *) list[0])->getName() == "if" && list.size() > 3) {
+                if (((Symbol *) list[0].get())->getName() == "if" && list.size() > 3) {
                     std::queue<Code *> th;
                     std::queue<Code *> el;
                     list[1]->toRPN(code);
@@ -78,7 +78,7 @@
                     code.push(new SEL(th, el));
                     return;
                 }
-                if (((Symbol *) list[0])->getName() == "lambda" && list.size() > 3) {
+                if (((Symbol *) list[0].get())->getName() == "lambda" && list.size() > 3) {
                     std::queue<Code *> body;
                     for (int i = 2; i < list.size() - 1; ++i)
                         list[i]->toRPN(body);
@@ -86,78 +86,81 @@
                     code.push(new LDF(body));
                     return;
                 }
+                if (((Symbol *) list[0].get())->getName() == "quote" && list.size() > 2) {
+                    code.push(new LDC(list[1]));
+                    return;
+                }
             }
-            if(list[0]->pair()&& ((Pair *)list[0])->car->symbol() && ((Symbol *)((Pair *)list[0])->car)->getName()=="lambda"){
+            if(list[0]->builtin()){
+                for(int i=list.size()-2;i>0;--i)
+                    list[i]->toRPN(code);
+                code.push(((Builtin *)list[0].get())->c);
+                return;
+            }else{//if(list[0]->pair())
                 code.push(new LDNIL());
                 for(int i=list.size()-2;i>0;--i){
                     list[i]->toRPN(code);
                     code.push(new CONS());
                 }
-
                 list[0]->toRPN(code);
                 code.push(new AP());
                 return;
-
             }
-
         }
-        if(!(cdr->null()&&cdr->pair()))
-            cdr->toRPN(code);
-        car->toRPN(code);
+        throw "not collable";
     }
 
     void Integer::toRPN(std::queue<Code *> &code) {
-        code.push(new LDC(this));
+        code.push(new LDC(std::make_shared<Integer>(*this)));
     }
 
-    void String::toRPN(std::queue<Code *> &code) {
+SEXP Integer::PartialEval(Environment &env, int d) {
+    return std::make_shared<Integer>(*this);
+}
 
+void String::toRPN(std::queue<Code *> &code) {
+        code.push(new LDC(std::make_shared<String>(*this)));
     }
 
     void Symbol::toRPN(std::queue<Code *> &code) {
-        if (string == "+")
-            code.push(new ADD());
-        else if (string == "*")
-            code.push(new MUL());
-        else if (string == "-")
-            code.push(new SUB());
+        code.push(new LDC(std::make_shared<Symbol>(*this)));
     }
 
     void LambdaArgument::toRPN(std::queue<Code *> &code) {
         code.push(new LD(d,p));
     }
 
-    Value * Symbol::PartialEval(Environment &env, int d) {
+    SEXP Symbol::PartialEval(Environment &env, int d) {
 
 
-        Value *v=env.lookup(string);
-        if(v==this)
+        SEXP v=env.lookup(string);
+        if(v.get()==this)
             return v;
         if(v) {
             if(v->arg()){
-                auto la=((LambdaArgument *)v);
-                return new LambdaArgument(1+d-la->d,la->p);
+                auto la=((LambdaArgument *)v.get());
+                return std::make_shared<LambdaArgument>(1+d-la->d,la->p);
             }
             return v->PartialEval(env, 0);
         }
-        throw 0;
+        throw std::string("Symbol "+string+" is not associated with any value");
     }
 
-    Value * Pair::PartialEval(Environment &env, int d) {
+    SEXP Pair::PartialEval(Environment &env, int d) {
 
-        if(car->symbol()&&((Symbol *) car)->getName() == "lambda"&& cdr->pair()&& !cdr->null()&& ((Pair *)cdr)->car->pair()){
+        if(car->symbol()&&((Symbol *) car.get())->getName() == "lambda"&& cdr->pair()&& !cdr->null()&& ((Pair *)cdr.get())->car->pair()){
             d++;
             Environment nenv=env;
-            Value *p=((Pair *)cdr)->car;
+            SEXP p=((Pair *)cdr.get())->car;
             int pos=0;
             while(p->pair()&&!p->null()){
-                nenv.addSymb(((Symbol*)((Pair*)p)->car)->getName(),new LambdaArgument(d,pos));
-                p=((Pair*)p)->cdr;
+                nenv.addSymb(((Symbol*)((Pair*)p.get())->car.get())->getName(),std::make_shared<LambdaArgument>(d,pos));
+                p=((Pair*)p.get())->cdr;
                 ++pos;
             }
-            return new Pair(car,new Pair(((Pair *)cdr)->car,((Pair *)cdr)->cdr->PartialEval(nenv,d)));
+            return std::make_shared<Pair>(car,std::make_shared<Pair>(((Pair *)cdr.get())->car,((Pair *)cdr.get())->cdr->PartialEval(nenv,d)));
         }
-        return new Pair(car->PartialEval(env, 0), cdr->PartialEval(env, 0));
+        return std::make_shared<Pair>(car->PartialEval(env, 0), cdr->PartialEval(env, 0));
     }
 
     void Builtin::toRPN(std::queue<Code *> &code) {

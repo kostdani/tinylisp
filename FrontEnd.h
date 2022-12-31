@@ -24,7 +24,6 @@ enum CHARTYPE {
     EOI,
     OTHER
 };
-class FrontEnd {
     class Lexer {
         std:: istream& input;
         std::string m_IdentifierStr;
@@ -50,26 +49,18 @@ class FrontEnd {
 
         void Compare(TOKEN s);
 
-        Value *Atom(int d);
-        Value *Tail(int d);
-        Value *List(int d);
-        Value *Expression(int d);
+        SEXP Atom(int d);
+        SEXP Tail(int d);
+        SEXP List(int d);
+        SEXP Expression(int d);
     public:
-        Value *tree;
         Parser(std::istream& in): m_Lexer(in){};
 
         ~Parser() {
 
         };
-        bool Parse();                    // parse
+        SEXP Parse();                    // parse
     };
-
-public:
-    FrontEnd(std::istream& in): parser(in){
-    }
-
-    Parser parser;
-};
 
 
 #endif //UNTITLED_FRONTEND_H

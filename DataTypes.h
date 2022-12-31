@@ -11,8 +11,11 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <memory>
 #include "SECD.h"
 class Environment;
+class Value;
+typedef std::shared_ptr<Value> SEXP;
 class Value { ;
 protected:
 
@@ -27,7 +30,8 @@ public:
     virtual bool arg() { return false; }
 
     virtual bool symbol(){return false;}
-    virtual Value *PartialEval(Environment &env, int d) {return this;};
+    virtual bool builtin(){return false;}
+    virtual SEXP PartialEval(Environment &env, int d) {return std::make_shared<Value>(*this);};
 
     virtual void toRPN(std::queue<Code *> &code) {}
 };
@@ -40,21 +44,22 @@ public:
 
     bool pair() override { return true; }
 
+    SEXP PartialEval(Environment &env, int d) override {return std::make_shared<Nil>(*this);};
 
     void toRPN(std::queue<Code *> &code) override;
 };
 
 class Pair : public Value {
-    Value *car;
-    Value *cdr;
+    SEXP car;
+    SEXP cdr;
 
     void print(std::ostream &os) const override;
-    Value *PartialEval(Environment &env, int d) override;
+    SEXP PartialEval(Environment &env, int d) override;
 
 public:
-    Pair(Value *a, Value *b) : car(a), cdr(b) {}
-    Value *Car(){return car;}
-    Value *Cdr(){return cdr;}
+    Pair(SEXP a, SEXP b) : car(a), cdr(b) {}
+    SEXP Car(){return car;}
+    SEXP Cdr(){return cdr;}
     bool pair() override { return true; }
 
     void toRPN(std::queue<Code *> &code) override;
@@ -67,6 +72,7 @@ class Integer : public Value {
 public:
     int integer;
     Integer(int i) : integer(i) {};
+    SEXP PartialEval(Environment &env, int d) override;
 
     bool null() override { return !integer; }
 
@@ -82,6 +88,7 @@ public:
     String(std::string str) : string(std::move(str)) {}
 
     bool null() override { return string.empty(); }
+    SEXP PartialEval(Environment &env, int d) override {return std::make_shared<String>(*this);};
 
     void toRPN(std::queue<Code *> &code) override;
 };
@@ -90,7 +97,7 @@ class Symbol : public Value {
     std::string string;
 
     void print(std::ostream &os) const override;
-    Value *PartialEval(Environment &env, int d) override;
+    SEXP PartialEval(Environment &env, int d) override;
 
 public:
     Symbol(std::string str) : string(std::move(str)) {}
@@ -99,11 +106,13 @@ public:
     void toRPN(std::queue<Code *> &code) override;
 };
 class Builtin : public Value{
-    Code *c;
     void print(std::ostream &os) const override;
 public:
+    Code *c;
     Builtin(Code *c):c(c){}
     void toRPN(std::queue<Code *> &code) override;
+    SEXP PartialEval(Environment &env, int d) override {return std::make_shared<Builtin>(*this);};
+    bool builtin()override{return true;}
 
 };
     class LambdaArgument:public Value{
@@ -118,19 +127,19 @@ public:
         void print(std::ostream &os) const override;
     public:
         std::queue<Code *> code;
-        std::vector<std::vector<Value *>> env;
-        Closure(std::queue<Code *> code, std::vector<std::vector<Value *>> env):code(code),env(env){}
+        std::vector<std::vector<SEXP>> env;
+        Closure(std::queue<Code *> code, std::vector<std::vector<SEXP>> env):code(code),env(env){}
     };
 
 
 
 class Environment{
-    std::map<std::string ,Value *> env;
+    std::map<std::string ,SEXP> env;
 public:
-    void addSymb(const std::string& sym,Value *val){
+    void addSymb(const std::string& sym,SEXP val){
         env[sym]=val;
     }
-    Value *lookup(const std::string& sym) const{
+    SEXP lookup(const std::string& sym) const{
         auto it=env.find(sym);
         if(it==env.end())
             return nullptr;

@@ -80,31 +80,43 @@ void LDC::run(SECD &secd) {
 }
 
 void MUL::run(SECD &secd) {
-    Integer* a=(Integer *)secd.stack.top();
+    SEXP f=secd.stack.top();
     secd.stack.pop();
-    Integer* b=(Integer *)secd.stack.top();
+    SEXP s=secd.stack.top();
     secd.stack.pop();
-    secd.stack.push(new Integer(a->integer*b->integer));
+    Integer* a=dynamic_cast<Integer *>(f.get());
+    Integer* b=dynamic_cast<Integer *>(s.get());
+    if(!a||!b)
+        throw std::string("Can only multiply numbers");
+    secd.stack.push(std::make_shared<Integer>(a->integer*b->integer));
 }
 
 void ADD::run(SECD &secd) {
-    Integer* a=(Integer *)secd.stack.top();
+    SEXP f=secd.stack.top();
     secd.stack.pop();
-    Integer* b=(Integer *)secd.stack.top();
+    SEXP s=secd.stack.top();
     secd.stack.pop();
-    secd.stack.push(new Integer(a->integer+b->integer));
+    Integer* a=dynamic_cast<Integer *>(f.get());
+    Integer* b=dynamic_cast<Integer *>(s.get());
+    if(!a||!b)
+        throw std::string("Can only add numbers");
+    secd.stack.push(std::make_shared<Integer>(a->integer+b->integer));
 }
 
 void SUB::run(SECD &secd) {
-    Integer* a=(Integer *)secd.stack.top();
+    SEXP f=secd.stack.top();
     secd.stack.pop();
-    Integer* b=(Integer *)secd.stack.top();
+    SEXP s=secd.stack.top();
     secd.stack.pop();
-    secd.stack.push(new Integer(a->integer-b->integer));
+    Integer* a=dynamic_cast<Integer *>(f.get());
+    Integer* b=dynamic_cast<Integer *>(s.get());
+    if(!a||!b)
+        throw std::string("Can only subtract numbers");
+    secd.stack.push(std::make_shared<Integer>(a->integer-b->integer));
 }
 
 void SEL::run(SECD &secd) {
-    Value* cond=secd.stack.top();
+    SEXP cond=secd.stack.top();
     secd.stack.pop();
     secd.dump.push({secd.stack, secd.environment, secd.code});
     secd.code=!cond->null()?th:el;
@@ -119,15 +131,19 @@ void LD::run(SECD &secd) {
 }
 
 void LDF::run(SECD &secd) {
-    secd.stack.push(new Closure(code,secd.environment));
+    secd.stack.push(std::make_shared< Closure>(code,secd.environment));
 }
 
 void AP::run(SECD &secd) {
+    SEXP f=secd.stack.top();
+    secd.stack.pop();
+    SEXP s=secd.stack.top();
+    secd.stack.pop();
 
-    Closure* cls=(Closure *)secd.stack.top();
-    secd.stack.pop();
-    Value* args=(Pair *)secd.stack.top();
-    secd.stack.pop();
+    Closure* cls=dynamic_cast<Closure *>(f.get());
+    Value* args=dynamic_cast<Pair *>(s.get());
+    if(!cls || !args)
+        throw std::string("Not collable");
 
 
     secd.dump.push({secd.stack, secd.environment, secd.code});
@@ -136,14 +152,14 @@ void AP::run(SECD &secd) {
     secd.environment={{}};
     while(args->pair()&&!args->null()){
         secd.environment[0].push_back(((Pair *)args)->Car());
-        args=((Pair *)args)->Cdr();
+        args=((Pair *)args)->Cdr().get();
     }
     for(auto r:cls->env)
         secd.environment.push_back(r);
 }
 
 void RET::run(SECD &secd) {
-    Value *res=secd.stack.top();
+    SEXP res=secd.stack.top();
     secd.code=secd.dump.top().code;
     secd.environment=secd.dump.top().environment;
     secd.stack=secd.dump.top().stack;
@@ -153,13 +169,13 @@ void RET::run(SECD &secd) {
 
 void CONS::run(SECD &secd) {
 
-    Value* a=secd.stack.top();
+    SEXP a=secd.stack.top();
     secd.stack.pop();
-    Value* b=secd.stack.top();
+    SEXP b=secd.stack.top();
     secd.stack.pop();
-    secd.stack.push(new Pair(a,b));
+    secd.stack.push(std::make_shared< Pair>(a,b));
 }
 
 void LDNIL::run(SECD &secd) {
-    secd.stack.push(new Nil());
+    secd.stack.push(std::make_shared< Nil>());
 }

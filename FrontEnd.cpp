@@ -3,7 +3,7 @@
 //
 
 #include "FrontEnd.h"
-void FrontEnd::Lexer::readInput() {
+void Lexer::readInput() {
     character=nextChar();
 
     if (character>='0' && character<='9')
@@ -16,11 +16,11 @@ void FrontEnd::Lexer::readInput() {
         chartype = CHARTYPE::OTHER;
 }
 
-char FrontEnd::Lexer::nextChar() {
+char Lexer::nextChar() {
     return input.get();
 }
 
-TOKEN FrontEnd::Lexer::gettok() {
+TOKEN Lexer::gettok() {
     TOKEN t;
     while(chartype==CHARTYPE::WHITESPACE)
         readInput();
@@ -94,40 +94,39 @@ void CompareError(int s) {
 
 
 
-void FrontEnd::Parser::Compare(TOKEN s) {
+void Parser::Compare(TOKEN s) {
     if (CurTok == s)
         getNextToken();
     else
         CompareError(s);
 }
 
-bool FrontEnd::Parser::Parse() {
+SEXP  Parser::Parse() {
     getNextToken();
-    tree=Expression(0);
-    return true;
+    return Expression(0);
 }
 
-Value *FrontEnd::Parser::Atom(int d) {
-    Value *v= nullptr;
+SEXP Parser::Atom(int d) {
+    SEXP v;
     switch (CurTok) {
         case NUMBER:
             if(debug)
                 printf("(4.1) A -> num (%d)\n",m_Lexer.numVal());
-            v=new Integer(m_Lexer.numVal());
+            v=std::make_shared<Integer>(m_Lexer.numVal());
             if (d>0)
                 getNextToken();
             return v;
         case STRING:
             if(debug)
                 printf("(4.2) A -> str (%s)\n",m_Lexer.identifierStr().c_str());
-            v=new String(m_Lexer.identifierStr());
+            v=std::make_shared<String>(m_Lexer.identifierStr());
             if (d>0)
                 getNextToken();
             return v;
         case SYMBOL:
             if(debug)
                 printf("(4.3) A -> sym (%s)\n",m_Lexer.identifierStr().c_str());
-            v=new Symbol(m_Lexer.identifierStr());
+            v=std::make_shared<Symbol>(m_Lexer.identifierStr());
             if (d>0)
                 getNextToken();
             return v;
@@ -135,14 +134,14 @@ Value *FrontEnd::Parser::Atom(int d) {
     return nullptr;
 }
 
-Value *FrontEnd::Parser::Tail(int d) {
-    Value *a;
-    Value *b;
+SEXP Parser::Tail(int d) {
+    SEXP a;
+    SEXP b;
     switch (CurTok) {
         case RIGHTPAR:
             if(debug)
                 printf("(3.1) T -> e\n");
-            return new Nil();
+            return std::make_shared< Nil>();
         case DOT:
             if(debug)
                 printf("(3.2) T -> . E\n");
@@ -153,26 +152,26 @@ Value *FrontEnd::Parser::Tail(int d) {
                 printf("(3.3) T -> E T\n");
             a= Expression(d);
             b= Tail(d);
-            return new Pair(a,b);
+            return std::make_shared<Pair>(a,b);
     }
 }
 
-Value *FrontEnd::Parser::List(int d) {
+SEXP Parser::List(int d) {
     if(debug)
         printf("(2) T -> (E T)\n");
     Compare(TOKEN::LEFTPAR);
     //Value *a= Expression(d+1);
-    Value *b= Tail(d+1);
+    SEXP b= Tail(d+1);
     if(d>0){
         Compare(TOKEN::RIGHTPAR);
         return b;
     }else if(CurTok==TOKEN::RIGHTPAR)
         return b;
     else
-        return new Nil();
+        return std::make_shared< Nil>();
 }
 
-Value *FrontEnd::Parser::Expression(int d) {
+SEXP Parser::Expression(int d) {
     switch (CurTok) {
         case LEFTPAR:
             if(debug)
@@ -182,9 +181,9 @@ Value *FrontEnd::Parser::Expression(int d) {
             if(debug)
                 printf("(1.2) E -> 'E\n");
             Compare(TOKEN::APOSTROPHE);
-            return new Pair(new Symbol("quote"),
-                            new Pair(Expression(d),
-                                     new Nil()));
+            return std::make_shared< Pair>(std::make_shared< Symbol>("quote"),
+                            std::make_shared< Pair>(Expression(d),
+                                     std::make_shared< Nil>()));
         default:
             if(debug)
                 printf("(1.3) E -> A\n");
@@ -192,6 +191,6 @@ Value *FrontEnd::Parser::Expression(int d) {
     }
 }
 
-TOKEN FrontEnd::Parser::getNextToken() {
+TOKEN Parser::getNextToken() {
     return CurTok=m_Lexer.gettok();
 }

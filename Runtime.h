@@ -8,32 +8,38 @@
 #include "FrontEnd.h"
 #include "SECD.h"
 class Runtime {
-FrontEnd front;
+Parser parser;
 std::ostream &out;
 Environment env;
 SECD secd;
-Value *read(){
-    front.parser.Parse();
-    return front.parser.tree;
+SEXP read(){
+    return parser.Parse();
 }
-Value *eval(Value *v){
+SEXP eval(SEXP v){
 
     std::queue<Code *> code;
 
     auto s=v->PartialEval(env,0);
-    //std::cout<<*s<<std::endl;
     s->toRPN(code);
+    auto sg=s.get();
     secd.code=code;
     return secd.eval();
 }
-void print(Value *v){
+void print(SEXP v){
     out<<*v<<std::endl;
 }
 public:
-    Runtime(std::istream& in,std::ostream &out,Environment env): front(in),out(out),env(env){}
+    Runtime(std::istream& in,std::ostream &out,Environment env): parser(in),out(out),env(env){}
     void repl(){
-        while(true)
-            print(eval(read()));
+        while(true) {
+            try {
+                print(eval(read()));
+            }
+            catch (std::string err) {
+                out << "ERROR: " << err << std::endl;
+            }
+            secd=SECD();
+        }
     }
 };
 
@@ -41,12 +47,13 @@ public:
 class StandartRuntime: public Runtime{
     Environment sdenv(){
         Environment env;
-        env.addSymb("if",new Symbol("if"));
-        env.addSymb("lambda",new Symbol("lambda"));
-        env.addSymb("+",new Builtin(new ADD()));
-        env.addSymb("*",new Builtin(new MUL()));
-        env.addSymb("-",new Builtin(new SUB()));
-        env.addSymb("cons",new Builtin(new CONS()));
+        env.addSymb("if",std::make_shared<Symbol>("if"));
+        env.addSymb("lambda",std::make_shared<Symbol>("lambda"));
+        env.addSymb("quote",std::make_shared<Symbol>("quote"));
+        env.addSymb("+",std::make_shared<Builtin>(new ADD()));
+        env.addSymb("*",std::make_shared<Builtin>(new MUL()));
+        env.addSymb("-",std::make_shared<Builtin>(new SUB()));
+        env.addSymb("cons",std::make_shared<Builtin>(new CONS()));
         return env;
     }
 public:

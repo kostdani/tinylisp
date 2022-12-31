@@ -9,9 +9,11 @@
 #include <utility>
 #include <vector>
 #include <queue>
+#include <memory>
 
 class SECD;
 class Value;
+typedef std::shared_ptr<Value> SEXP;
 
 class Code{
     virtual void print(std::ostream & os) const{};
@@ -27,11 +29,11 @@ public:
     void run(SECD &secd) override;
 };
 class LDC:public Code{
-    Value * c;
+    SEXP c;
     void print(std::ostream & os) const override;
 
 public:
-    LDC(Value* c):c(c){}
+    LDC(SEXP c):c(c){}
     void run(SECD &secd) override;
 };
 class MUL:public Code{
@@ -104,19 +106,18 @@ public:
 };
 
 struct SEC{
-
-    std::stack<Value *> stack;
-    std::vector<std::vector<Value *>> environment;
+    std::stack<SEXP> stack;
+    std::vector<std::vector<SEXP>> environment;
     std::queue<Code *> code;
-    SEC(std::stack<Value *> stack,std::vector<std::vector<Value *>> environment,std::queue<Code *> code):stack(stack),environment(environment),code(code){}
+    SEC(std::stack<SEXP> stack,std::vector<std::vector<SEXP>> environment,std::queue<Code *> code):stack(stack),environment(environment),code(code){}
 };
 class SECD{
 public:
- std::stack<Value *> stack;
+ std::stack<SEXP> stack;
  std::queue<Code *> code;
  std::stack<SEC> dump;
- std::vector<std::vector<Value *>> environment;
-    Value * eval(){
+ std::vector<std::vector<SEXP>> environment;
+    SEXP eval(){
      while(!code.empty()) {
          auto c = code.front();
          code.pop();
