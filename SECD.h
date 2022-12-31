@@ -13,7 +13,9 @@
 
 class SECD;
 class Value;
+class Code;
 typedef std::shared_ptr<Value> SEXP;
+typedef std::shared_ptr<Code> CODE;
 
 class Code{
     virtual void print(std::ostream & os) const{};
@@ -55,11 +57,11 @@ public:
 
 };
 class SEL:public Code{
-    std::queue<Code *> th;
-    std::queue<Code *> el;
+    std::queue<CODE> th;
+    std::queue<CODE> el;
     void print(std::ostream & os) const override;
 public:
-    SEL(std::queue<Code *> t,std::queue<Code *>e):th(std::move(t)),el(std::move(e)){}
+    SEL(std::queue<CODE> t,std::queue<CODE>e):th(std::move(t)),el(std::move(e)){}
     void run(SECD &secd) override;
 };
 class JOIN: public Code{
@@ -78,10 +80,10 @@ public:
 };
 
 class LDF: public Code{
-    std::queue<Code *> code;
+    std::queue<CODE> code;
     void print(std::ostream & os) const override;
 public:
-    LDF(std::queue<Code *> c):code(c){}
+    LDF(std::queue<CODE> c):code(c){}
     void run(SECD &secd) override;
 };
 
@@ -108,13 +110,13 @@ public:
 struct SEC{
     std::stack<SEXP> stack;
     std::vector<std::vector<SEXP>> environment;
-    std::queue<Code *> code;
-    SEC(std::stack<SEXP> stack,std::vector<std::vector<SEXP>> environment,std::queue<Code *> code):stack(stack),environment(environment),code(code){}
+    std::queue<CODE> code;
+    SEC(std::stack<SEXP> stack,std::vector<std::vector<SEXP>> environment,std::queue<CODE> code):stack(stack),environment(environment),code(code){}
 };
 class SECD{
 public:
  std::stack<SEXP> stack;
- std::queue<Code *> code;
+ std::queue<CODE> code;
  std::stack<SEC> dump;
  std::vector<std::vector<SEXP>> environment;
     SEXP eval(){

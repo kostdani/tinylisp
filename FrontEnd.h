@@ -45,7 +45,6 @@ enum CHARTYPE {
         TOKEN getNextToken();
 
         Lexer m_Lexer;                   // lexer is used to read tokens
-        TOKEN CurTok;                      // to keep the current token
 
         void Compare(TOKEN s);
 
@@ -54,6 +53,7 @@ enum CHARTYPE {
         SEXP List(int d);
         SEXP Expression(int d);
     public:
+        TOKEN CurTok;                      // to keep the current token
         Parser(std::istream& in): m_Lexer(in){};
 
         ~Parser() {

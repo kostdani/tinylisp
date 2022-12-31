@@ -33,7 +33,7 @@ public:
     virtual bool builtin(){return false;}
     virtual SEXP PartialEval(Environment &env, int d) {return std::make_shared<Value>(*this);};
 
-    virtual void toRPN(std::queue<Code *> &code) {}
+    virtual void toRPN(std::queue<CODE> &code) {}
 };
 
 class Nil : public Value {
@@ -46,7 +46,7 @@ public:
 
     SEXP PartialEval(Environment &env, int d) override {return std::make_shared<Nil>(*this);};
 
-    void toRPN(std::queue<Code *> &code) override;
+    void toRPN(std::queue<CODE> &code) override;
 };
 
 class Pair : public Value {
@@ -62,7 +62,7 @@ public:
     SEXP Cdr(){return cdr;}
     bool pair() override { return true; }
 
-    void toRPN(std::queue<Code *> &code) override;
+    void toRPN(std::queue<CODE> &code) override;
 };
 
 class Integer : public Value {
@@ -76,7 +76,7 @@ public:
 
     bool null() override { return !integer; }
 
-    void toRPN(std::queue<Code *> &code) override;
+    void toRPN(std::queue<CODE> &code) override;
 };
 
 class String : public Value {
@@ -90,7 +90,7 @@ public:
     bool null() override { return string.empty(); }
     SEXP PartialEval(Environment &env, int d) override {return std::make_shared<String>(*this);};
 
-    void toRPN(std::queue<Code *> &code) override;
+    void toRPN(std::queue<CODE> &code) override;
 };
 
 class Symbol : public Value {
@@ -103,14 +103,14 @@ public:
     Symbol(std::string str) : string(std::move(str)) {}
     bool symbol()override{return true;}
     std::string getName(){return string;}
-    void toRPN(std::queue<Code *> &code) override;
+    void toRPN(std::queue<CODE> &code) override;
 };
 class Builtin : public Value{
     void print(std::ostream &os) const override;
 public:
-    Code *c;
-    Builtin(Code *c):c(c){}
-    void toRPN(std::queue<Code *> &code) override;
+    CODE c;
+    Builtin(CODE c):c(c){}
+    void toRPN(std::queue<CODE> &code) override;
     SEXP PartialEval(Environment &env, int d) override {return std::make_shared<Builtin>(*this);};
     bool builtin()override{return true;}
 
@@ -120,15 +120,15 @@ public:
     public:
         int d,p;
         LambdaArgument(int d,int p):d(d),p(p){}
-        void toRPN(std::queue<Code *> &code) override;
+        void toRPN(std::queue<CODE> &code) override;
         bool arg() override { return true; }
     };
     class Closure : public Value{
         void print(std::ostream &os) const override;
     public:
-        std::queue<Code *> code;
+        std::queue<CODE> code;
         std::vector<std::vector<SEXP>> env;
-        Closure(std::queue<Code *> code, std::vector<std::vector<SEXP>> env):code(code),env(env){}
+        Closure(std::queue<CODE> code, std::vector<std::vector<SEXP>> env):code(code),env(env){}
     };
 
 

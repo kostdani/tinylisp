@@ -17,7 +17,13 @@ void Lexer::readInput() {
 }
 
 char Lexer::nextChar() {
-    return input.get();
+    if(character==EOF)
+        return EOF;
+    int c= input.get();
+    if(c==-1) {
+        c = EOF;
+    }
+    return c;
 }
 
 TOKEN Lexer::gettok() {
@@ -103,6 +109,8 @@ void Parser::Compare(TOKEN s) {
 
 SEXP  Parser::Parse() {
     getNextToken();
+    if(CurTok==END)
+        return std::make_shared<Nil>();
     return Expression(0);
 }
 
@@ -192,5 +200,7 @@ SEXP Parser::Expression(int d) {
 }
 
 TOKEN Parser::getNextToken() {
+    if(CurTok==END)
+        return END;
     return CurTok=m_Lexer.gettok();
 }

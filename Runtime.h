@@ -17,7 +17,7 @@ SEXP read(){
 }
 SEXP eval(SEXP v){
 
-    std::queue<Code *> code;
+    std::queue<CODE> code;
 
     auto s=v->PartialEval(env,0);
     s->toRPN(code);
@@ -33,7 +33,10 @@ public:
     void repl(){
         while(true) {
             try {
-                print(eval(read()));
+                SEXP r=read();
+                if(parser.CurTok==END)
+                    break;
+                print(eval(r));
             }
             catch (std::string err) {
                 out << "ERROR: " << err << std::endl;
@@ -50,10 +53,10 @@ class StandartRuntime: public Runtime{
         env.addSymb("if",std::make_shared<Symbol>("if"));
         env.addSymb("lambda",std::make_shared<Symbol>("lambda"));
         env.addSymb("quote",std::make_shared<Symbol>("quote"));
-        env.addSymb("+",std::make_shared<Builtin>(new ADD()));
-        env.addSymb("*",std::make_shared<Builtin>(new MUL()));
-        env.addSymb("-",std::make_shared<Builtin>(new SUB()));
-        env.addSymb("cons",std::make_shared<Builtin>(new CONS()));
+        env.addSymb("+",std::make_shared<Builtin>(std::make_shared<ADD>()));
+        env.addSymb("*",std::make_shared<Builtin>(std::make_shared<MUL>()));
+        env.addSymb("-",std::make_shared<Builtin>(std::make_shared<SUB>()));
+        env.addSymb("cons",std::make_shared<Builtin>(std::make_shared<CONS>()));
         return env;
     }
 public:

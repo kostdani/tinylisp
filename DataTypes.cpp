@@ -51,12 +51,12 @@
         os<<"("<<d<<"."<<p<<")";
     }
 
-    void Nil::toRPN(std::queue<Code *> &code) {
-        code.push(new LDNIL());
+    void Nil::toRPN(std::queue<CODE> &code) {
+        code.push(std::make_shared<LDNIL>());
     }
 
 
-    void Pair::toRPN(std::queue<Code *> &code) {
+    void Pair::toRPN(std::queue<CODE> &code) {
 
         std::vector<SEXP> list;
         SEXP p=std::make_shared<Pair>(*this);
@@ -68,26 +68,26 @@
         if(list.back()->null()){
             if(list[0]->symbol()) {
                 if (((Symbol *) list[0].get())->getName() == "if" && list.size() > 3) {
-                    std::queue<Code *> th;
-                    std::queue<Code *> el;
+                    std::queue<CODE> th;
+                    std::queue<CODE> el;
                     list[1]->toRPN(code);
                     list[2]->toRPN(th);
                     list[3]->toRPN(el);
-                    th.push(new JOIN());
-                    el.push(new JOIN());
-                    code.push(new SEL(th, el));
+                    th.push(std::make_shared<JOIN>());
+                    el.push(std::make_shared<JOIN>());
+                    code.push(std::make_shared<SEL>(th, el));
                     return;
                 }
                 if (((Symbol *) list[0].get())->getName() == "lambda" && list.size() > 3) {
-                    std::queue<Code *> body;
+                    std::queue<CODE> body;
                     for (int i = 2; i < list.size() - 1; ++i)
                         list[i]->toRPN(body);
-                    body.push(new RET());
-                    code.push(new LDF(body));
+                    body.push(std::make_shared<RET>());
+                    code.push(std::make_shared<LDF>(body));
                     return;
                 }
                 if (((Symbol *) list[0].get())->getName() == "quote" && list.size() > 2) {
-                    code.push(new LDC(list[1]));
+                    code.push(std::make_shared<LDC>(list[1]));
                     return;
                 }
             }
@@ -97,37 +97,37 @@
                 code.push(((Builtin *)list[0].get())->c);
                 return;
             }else{//if(list[0]->pair())
-                code.push(new LDNIL());
+                code.push(std::make_shared<LDNIL>());
                 for(int i=list.size()-2;i>0;--i){
                     list[i]->toRPN(code);
-                    code.push(new CONS());
+                    code.push(std::make_shared<CONS>());
                 }
                 list[0]->toRPN(code);
-                code.push(new AP());
+                code.push(std::make_shared<AP>());
                 return;
             }
         }
         throw "not collable";
     }
 
-    void Integer::toRPN(std::queue<Code *> &code) {
-        code.push(new LDC(std::make_shared<Integer>(*this)));
+    void Integer::toRPN(std::queue<CODE> &code) {
+        code.push(std::make_shared<LDC>(std::make_shared<Integer>(*this)));
     }
 
 SEXP Integer::PartialEval(Environment &env, int d) {
     return std::make_shared<Integer>(*this);
 }
 
-void String::toRPN(std::queue<Code *> &code) {
-        code.push(new LDC(std::make_shared<String>(*this)));
+void String::toRPN(std::queue<CODE> &code) {
+        code.push(std::make_shared<LDC>(std::make_shared<String>(*this)));
     }
 
-    void Symbol::toRPN(std::queue<Code *> &code) {
-        code.push(new LDC(std::make_shared<Symbol>(*this)));
+    void Symbol::toRPN(std::queue<CODE> &code) {
+        code.push(std::make_shared<LDC>(std::make_shared<Symbol>(*this)));
     }
 
-    void LambdaArgument::toRPN(std::queue<Code *> &code) {
-        code.push(new LD(d,p));
+    void LambdaArgument::toRPN(std::queue<CODE> &code) {
+        code.push(std::make_shared<LD>(d,p));
     }
 
     SEXP Symbol::PartialEval(Environment &env, int d) {
@@ -163,7 +163,7 @@ void String::toRPN(std::queue<Code *> &code) {
         return std::make_shared<Pair>(car->PartialEval(env, 0), cdr->PartialEval(env, 0));
     }
 
-    void Builtin::toRPN(std::queue<Code *> &code) {
+    void Builtin::toRPN(std::queue<CODE> &code) {
         code.push(c);
     }
 
