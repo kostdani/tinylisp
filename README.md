@@ -1,19 +1,14 @@
-# Interpreter TinyLISP
-
-TinyLisp je implementace velmi malého lisp-like jazyka. Obsahuje malý, ale funkční, lexer, parser, runtime, garbage kolektor, SECD překladač a jeho VM.
+# TinyLISP interpreter
+TinyLisp is an implementation of a very small lisp-like language. It contains a small but functional lexer, parser, runtime, garbage collector, SECD translator and its VM.
 
 ## Example usage
+the application can:
 
-aplikace umí:
+translate and interpret basic LISP constructions: symbols, integer and string atoms, pairs, quote, if, lambda
+support all SECD instructions (except RAP): builtin instruction, LDC, SEL, JOIN, LD, LDF, AP, RET
+Run the application on the command line.
 
-* překládat a interpretovat základní LISPovské konstrukce:
-symboly, celočíselné a řetězcové atomy, páry, quote, if, lambda
-* podporovat všechny SECD instrukce (kromě RAP):
-builtin instrukce, LDC, SEL, JOIN, LD, LDF, AP, RET
-
-Aplikace spusti na příkazovém řádku.
-
-příklady podporovaných programů:
+examples of supported programs:
 
 ( - 10 ( + 2 ( * 4 5)))
 
